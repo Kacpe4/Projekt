@@ -1,18 +1,23 @@
 from django.db import models
 
-# Create your models here.
 class Team(models.Model):
     name = models.CharField(max_length=100)
-    logo = models.CharField(max_length=100)
-    league = models.CharField(max_length=100)
+    # Zmiana: null=True pozwala na puste wartości w bazie
+    logo = models.CharField(max_length=200, null=True, blank=True) 
+    league = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
         return self.name
 
 class Player(models.Model):
     name = models.CharField(max_length=100)
-    position = models.CharField(max_length=50)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name = 'players')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    # Tu też pozwalamy na brak pozycji
+    position = models.CharField(max_length=50, null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.name},{self.position},{self.team}'
+    
 class Match(models.Model):
     home_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='home_matches')
     away_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='away_matches')

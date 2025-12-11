@@ -1,53 +1,47 @@
+import requests
 from django.core.management.base import BaseCommand
 from django.apps import apps
-import requests
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Command(BaseCommand):
-    help = 'Pobiera dane drużyny.'
+    help = 'Pobiera dane drużyny z TheSportsDB (Darmowy klucz).'
 
     def handle(self, *args, **options):
-        # --- INTELIGENTNE POBIERANIE MODELU ---
-        Team = None
+        # 1. Pobieramy model
         try:
-            Team = apps.get_model('core', 'Team') # Próba 1: krótka nazwa
+            Team = apps.get_model('core', 'Team')
         except LookupError:
-            try:
-                Team = apps.get_model('footballapp.core', 'Team') # Próba 2: długa nazwa
-            except LookupError:
-                # Jeśli obie zawiodą, wypisz co widzi Django
-                self.stdout.write(self.style.ERROR("❌ BŁĄD KRYTYCZNY: Django nie widzi Twojej aplikacji."))
-                self.stdout.write("Dostępne aplikacje w systemie to:")
-                for app in apps.get_app_configs():
-                    self.stdout.write(f" - {app.label} (nazwa: {app.name})")
-                return
-        # --------------------------------------
-
-        API_KEY = os.getenv('API_KEY')
-        if not API_KEY:
-            self.stdout.write(self.style.ERROR("Brak klucza API w .env"))
+            self.stdout.write(self.style.ERROR("❌ Błąd: Nie znaleziono modelu Team."))
             return
 
-        headers = {'x-rapidapi-key': API_KEY}
-        params = {'league': 39, 'season': 2021, 'id': 33}
+        # Używamy oficjalnego, darmowego API TheSportsDB
+        url = "https://www.thesportsdb.com/api/v1/json/3/searchteams.php"
+        params = {'t': 'Manchester United'}
 
-        self.stdout.write("Pobieranie danych...")
+        self.stdout.write("⏳ Pobieranie drużyny z TheSportsDB...")
+
         try:
-            response = requests.get('https://v3.football.api-sports.io/teams', headers=headers, params=params)
+            response = requests.get(url, params=params)
             data = response.json()
         except Exception as e:
-             self.stdout.write(self.style.ERROR(f"Błąd sieci: {e}"))
+             self.stdout.write(self.style.ERROR(f"❌ Błąd sieci: {e}"))
              return
 
-        if data.get('response'):
-            team_data = data['response'][0]['team']
-            Team.objects.update_or_create(
-                name=team_data['name'],
-                defaults={'logo': team_data['logo'], 'league': 'Premier League'}
+        # Sprawdzenie czy są dane
+        if data.get('teams'):
+            team_data = data['teams'][0] # Pierwszy wynik
+            
+            # --- TU BYŁ BŁĄD, TERAZ JEST POPRAWIONE ---
+            # Zmieniłem "team, _ =" na "obj, created ="
+            obj, created = Team.objects.update_or_create(
+                name=team_data.get('strTeam'),
+                defaults={
+                    'logo': team_data.get('strTeamBadge'),
+                    'league': team_data.get('strLeague')
+                }
             )
-            self.stdout.write(self.style.SUCCESS(f"✅ Sukces! Zapisano: {team_data['name']}"))
+            # ------------------------------------------
+            
+            action = "Dodano" if created else "Zaktualizowano"
+            self.stdout.write(self.style.SUCCESS(f"✅ {action}: {team_data['strTeam']}"))
         else:
-            self.stdout.write(self.style.WARNING(f"⚠️ API odpowiedziało, ale brak danych."))
+            self.stdout.write(self.style.WARNING(f"⚠️ API nie znalazło drużyny."))

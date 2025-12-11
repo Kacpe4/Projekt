@@ -1,13 +1,9 @@
 import requests
-import os
 from django.core.management.base import BaseCommand
 from django.apps import apps
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Command(BaseCommand):
-    help = 'Pobiera piłkarzy Manchesteru United (Sezon 2023) i zapisuje do bazy.'
+    help = 'Pobiera piłkarzy z TheSportsDB (Darmowy klucz).'
 
     def handle(self, *args, **options):
         # 1. Pobieramy modele
@@ -15,53 +11,47 @@ class Command(BaseCommand):
             Team = apps.get_model('core', 'Team')
             Player = apps.get_model('core', 'Player')
         except LookupError:
-            self.stdout.write(self.style.ERROR("Błąd: Nie znaleziono modeli."))
+            self.stdout.write(self.style.ERROR("❌ Błąd: Nie znaleziono modeli."))
             return
 
-        # 2. Musimy mieć drużynę w bazie, żeby przypisać do niej piłkarza
+        # 2. Szukamy drużyny w bazie
         try:
             man_utd = Team.objects.get(name='Manchester United')
         except Team.DoesNotExist:
-            self.stdout.write(self.style.ERROR("❌ BŁĄD: Najpierw pobierz drużynę (fetch_team)!"))
+            self.stdout.write(self.style.ERROR("❌ Najpierw uruchom fetch_team!"))
             return
 
-        # 3. Konfiguracja API
-        API_KEY = os.getenv('API_KEY')
-        headers = {'x-rapidapi-key': API_KEY}
-        
-        # Dokumentacja mówi: endpoint /players wymaga ID drużyny i sezonu
-        params = {
-            'team': 33,      # ID Manchesteru United w tym API
-            'season': 2023   # Pobieramy obecny/ostatni pełny skład
-        }
+        # Oficjalny endpoint TheSportsDB do szukania piłkarzy
+        url = "https://www.thesportsdb.com/api/v1/json/3/searchplayers.php"
+        params = {'t': 'Manchester United'}
 
-        self.stdout.write("⏳ Pobieranie piłkarzy...")
+        self.stdout.write("⏳ Pobieranie piłkarzy z TheSportsDB...")
 
         try:
-            # TO JEST KLUCZOWE: Łączymy się z API
-            response = requests.get('https://v3.football.api-sports.io/players', headers=headers, params=params)
+            response = requests.get(url, params=params)
             data = response.json()
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Błąd sieci: {e}"))
+            self.stdout.write(self.style.ERROR(f"❌ Błąd sieci: {e}"))
             return
 
-        # 4. Pętla: Wyciągamy dane z JSON-a i zapisujemy do SQL
-        if data.get('response'):
+        # Klucz w JSON to 'player'
+        if data.get('player'):
             count = 0
-            for item in data['response']:
-                player_info = item['player']
-                statistics = item['statistics'][0] # Statystyki (pozycja itp.)
-                
-                # Zapisujemy do bazy (update_or_create zapobiega duplikatom)
+            for item in data['player']:
+                # Pobieramy pozycję (czasem jest pusta)
+                pos = item['strPosition']
+                if not pos:
+                    pos = "Nieznana"
+
                 Player.objects.update_or_create(
-                    name=player_info['name'],
-                    team=man_utd,  # Przypisujemy piłkarza do drużyny (Relacja!)
+                    name=item['strPlayer'],
+                    team=man_utd,
                     defaults={
-                        'position': statistics['games']['position'] or "Nieznana"
+                        'position': pos
                     }
                 )
                 count += 1
             
             self.stdout.write(self.style.SUCCESS(f"✅ Sukces! Zapisano {count} piłkarzy."))
         else:
-            self.stdout.write(self.style.WARNING(f"⚠️ API nie zwróciło danych: {data.get('errors', 'Brak wyników')}"))
+            self.stdout.write(self.style.WARNING(f"⚠️ API nie zwróciło piłkarzy (może darmowy klucz ma limity dla tej drużyny)."))
