@@ -22,6 +22,6 @@ class Match(models.Model):
 
 class MatchEvent(models.Model):
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='events')
-    event_type = models.CharField(max_length=50)  # e.g., goal, yellow card, red card
+    event_type = models.CharField(max_length=50)
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
-    event_time = models.IntegerField()  # minute of the match
+    event_time = models.IntegerField()
