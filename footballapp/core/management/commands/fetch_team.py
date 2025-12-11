@@ -10,12 +10,21 @@ class Command(BaseCommand):
     help = 'Pobiera dane drużyny.'
 
     def handle(self, *args, **options):
-        # Bezpieczne pobranie modelu
+        # --- INTELIGENTNE POBIERANIE MODELU ---
+        Team = None
         try:
-            Team = apps.get_model('core', 'Team')
+            Team = apps.get_model('core', 'Team') # Próba 1: krótka nazwa
         except LookupError:
-            self.stdout.write(self.style.ERROR("Błąd: Nie znaleziono aplikacji 'core'."))
-            return
+            try:
+                Team = apps.get_model('footballapp.core', 'Team') # Próba 2: długa nazwa
+            except LookupError:
+                # Jeśli obie zawiodą, wypisz co widzi Django
+                self.stdout.write(self.style.ERROR("❌ BŁĄD KRYTYCZNY: Django nie widzi Twojej aplikacji."))
+                self.stdout.write("Dostępne aplikacje w systemie to:")
+                for app in apps.get_app_configs():
+                    self.stdout.write(f" - {app.label} (nazwa: {app.name})")
+                return
+        # --------------------------------------
 
         API_KEY = os.getenv('API_KEY')
         if not API_KEY:
@@ -41,4 +50,4 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS(f"✅ Sukces! Zapisano: {team_data['name']}"))
         else:
-            self.stdout.write(self.style.WARNING(f"⚠️ API odpowiedziało, ale brak danych: {data}"))
+            self.stdout.write(self.style.WARNING(f"⚠️ API odpowiedziało, ale brak danych."))
