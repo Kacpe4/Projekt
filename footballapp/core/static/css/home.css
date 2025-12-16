@@ -1,0 +1,21 @@
+.home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.home-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.home-card h2 {
+    margin-bottom: 1rem;
+}
+
+.home-card p {
+    color: #7f8c8d;
+}

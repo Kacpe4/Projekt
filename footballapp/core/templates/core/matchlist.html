@@ -1,5 +1,38 @@
 {% extends 'base.html' %}
 
+{% block title %}Lista meczów{% endblock %}
+
 {% block content %}
-	
+<h1>⚽ Wszystkie mecze</h1>
+<div style="background: white; padding: 2rem; border-radius: 8px;">
+    {% for match in matches %}
+    <a href="{% url 'core:match_detail' match.event_id %}" style="display: block; padding: 1.5rem; margin-bottom: 1rem; background: #f8f9fa; border-radius: 4px; text-decoration: none; color: inherit; border-left: 4px solid {% if match.event_stage == '3' %}#27ae60{% elif match.event_stage == '2' %}#e74c3c{% else %}#3498db{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 200px; display: flex; align-items: center; justify-content: flex-end; gap: 1rem; font-weight: bold;">
+                <span>{{ match.home_team.name }}</span>
+                {% if match.home_team.logo %}
+                <img src="{{ match.home_team.logo }}" alt="{{ match.home_team.name }}" style="width: 40px; height: 40px; object-fit: contain;">
+                {% endif %}
+            </div>
+            <div style="padding: 0 2rem; font-size: 1.5rem; font-weight: bold; color: #2c3e50;">
+                {% if match.event_stage == '3' %}
+                    {{ match.home_score }} : {{ match.away_score }}
+                {% else %}
+                    - : -
+                {% endif %}
+            </div>
+            <div style="flex: 1; min-width: 200px; display: flex; align-items: center; gap: 1rem; font-weight: bold;">
+                {% if match.away_team.logo %}
+                <img src="{{ match.away_team.logo }}" alt="{{ match.away_team.name }}" style="width: 40px; height: 40px; object-fit: contain;">
+                {% endif %}
+                <span>{{ match.away_team.name }}</span>
+            </div>
+            <div style="color: #7f8c8d;">
+                <div>{{ match.start_time|date:"d.m.Y H:i" }}</div>
+                <div style="font-size: 0.9rem;">{{ match.get_event_stage_display }}</div>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
 {% endblock %}

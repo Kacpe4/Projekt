@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ match.home_team.name }} vs {{ match.away_team.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/match.css' %}">
+{% endblock %}
+
+
+{% block content %}
+<div class="card match-header">
+    <div class="match-date">{{ match.start_time|date:"d F Y, H:i" }}</div>
+    <div class="match-teams">
+        <div style="text-align: center;">
+            <a href="{% url 'core:team_detail' match.home_team.participant_id %}" style="text-decoration: none; color: inherit;">
+                {% if match.home_team.logo %}
+                <img src="{{ match.home_team.logo }}" alt="{{ match.home_team.name }}" style="width: 100px; height: 100px; object-fit: contain;">
+                {% endif %}
+                <h2 style="margin-top: 1rem;">{{ match.home_team.name }}</h2>
+            </a>
+        </div>
+        <div style="padding: 0 2rem; font-size: 1.5rem;">
+    {{ match.home_score|default:0 }} : {{ match.away_score|default:0 }}
+</div>
+
+        <div style="text-align: center;">
+            <a href="{% url 'core:team_detail' match.away_team.participant_id %}" style="text-decoration: none; color: inherit;">
+                {% if match.away_team.logo %}
+                <img src="{{ match.away_team.logo }}" alt="{{ match.away_team.name }}" style="width: 100px; height: 100px; object-fit: contain;">
+                {% endif %}
+                <h2 style="margin-top: 1rem;">{{ match.away_team.name }}</h2>
+            </a>
+        </div>
+    </div>
+    <div style="color: #7f8c8d;">Status: {{ match.get_event_stage_display }}</div>
+</div>
+
+{% if match_stats %}
+<div class="card">
+    <h2>📊 Statystyki meczu</h2>
+    {% regroup match_stats by period as period_list %}
+    {% for period_group in period_list %}
+    <h3 class="position-title">{{ period_group.grouper|title }}</h3>
+    {% for stat in period_group.list %}
+    <div class="stat-item">
+    <div class="stat-name">{{ stat.stat_name }}</div>
+    <div class="stat-values">
+        <span>{{ stat.home_value }}</span>
+        <div class="stat-bar-container">
+            <div class="stat-bar home" style="width: {% widthratio stat.home_value_numeric|add:stat.away_value_numeric stat.home_value_numeric 50 %}%;"></div>
+            <div class="stat-bar away" style="width: {% widthratio stat.away_value_numeric|add:stat.home_value_numeric stat.away_value_numeric 50 %}%;"></div>
+        </div>
+        <span>{{ stat.away_value }}</span>
+    </div>
+</div>
+
+    {% endfor %}
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>🔄 Head to Head</h2>
+    <div class="h2h-grid">
+        <div class="h2h-stat h2h-home">
+            <div class="h2h-value">{{ h2h_stats.home_wins }}</div>
+            <div style="color: #7f8c8d;">{{ match.home_team.short_name }}</div>
+        </div>
+        <div class="h2h-stat h2h-draw">
+            <div class="h2h-value">{{ h2h_stats.draws }}</div>
+            <div style="color: #7f8c8d;">Remisy</div>
+        </div>
+        <div class="h2h-stat h2h-away">
+            <div class="h2h-value">{{ h2h_stats.away_wins }}</div>
+            <div style="color: #7f8c8d;">{{ match.away_team.short_name }}</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 2rem;">Ostatnie mecze</h3>
+    {% for h2h in h2h_matches %}
+    <div class="h2h-match">
+        <div class="h2h-match-content">
+            <div style="flex: 1; text-align: right;">{{ h2h.home_team.name }}</div>
+            <div style="padding: 0 2rem; font-weight: bold;">{{ h2h.home_score }} : {{ h2h.away_score }}</div>
+            <div style="flex: 1;">{{ h2h.away_team.name }}</div>
+            <div style="color: #7f8c8d; font-size: 0.9rem;">{{ h2h.start_time|date:"d.m.Y" }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

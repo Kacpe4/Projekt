@@ -1,0 +1,117 @@
+.league-table {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.standings-table th {
+    background: #2c3e50;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+.standings-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.standings-table tr:hover {
+    background: #f8f9fa;
+}
+
+.position-cell {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    text-align: center;
+    width: 50px;
+}
+
+.team-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.team-logo-small {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.team-name-link {
+    color: #2c3e50;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.team-name-link:hover {
+    color: #3498db;
+}
+
+.stat-cell {
+    text-align: center;
+    font-weight: 500;
+}
+
+.positive {
+    color: #27ae60;
+}
+
+.negative {
+    color: #e74c3c;
+}
+
+.neutral {
+    color: #7f8c8d;
+}
+
+.points-cell {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    text-align: center;
+}
+
+/* Kolory pozycji */
+.position-ucl {
+    background: linear-gradient(90deg, #3498db 4px, transparent 4px);
+}
+
+.position-uel {
+    background: linear-gradient(90deg, #f39c12 4px, transparent 4px);
+}
+
+.position-relegation {
+    background: linear-gradient(90deg, #e74c3c 4px, transparent 4px);
+}
+
+/* Mobilne */
+@media (max-width: 768px) {
+    .standings-table th,
+    .standings-table td {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .team-logo-small {
+        width: 25px;
+        height: 25px;
+    }
+}
