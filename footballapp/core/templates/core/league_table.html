@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tabela ligowa{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/table.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>📊 Tabela Ligowa</h1>
+
+<div class="league-table">
+    <div class="table-container">
+        <table class="standings-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Drużyna</th>
+                    <th style="text-align: center; width: 60px;">M</th>
+                    <th style="text-align: center; width: 60px;">W</th>
+                    <th style="text-align: center; width: 60px;">R</th>
+                    <th style="text-align: center; width: 60px;">P</th>
+                    <th style="text-align: center; width: 80px;">Bramki</th>
+                    <th style="text-align: center; width: 70px;">Bilans</th>
+                    <th style="text-align: center; width: 70px;">Pkt</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in table %}
+                <tr class="{% if item.position <= 4 %}position-ucl{% elif item.position == 5 %}position-uel{% elif item.position >= 18 %}position-relegation{% endif %}">
+                    <td class="position-cell">{{ item.position }}</td>
+                    <td>
+                        <div class="team-cell">
+                            {% if item.team.logo %}
+                            <img src="{{ item.team.logo }}" alt="{{ item.team.name }}" class="team-logo-small">
+                            {% endif %}
+                            <a href="{% url 'core:team_detail' item.team.participant_id %}" class="team-name-link">
+                                {{ item.team.name }}
+                            </a>
+                        </div>
+                    </td>
+                    <td class="stat-cell">{{ item.played }}</td>
+                    <td class="stat-cell">{{ item.wins }}</td>
+                    <td class="stat-cell">{{ item.draws }}</td>
+                    <td class="stat-cell">{{ item.losses }}</td>
+                    <td class="stat-cell">{{ item.goals_for }}:{{ item.goals_against }}</td>
+                    <td class="stat-cell {% if item.goal_difference > 0 %}positive{% elif item.goal_difference < 0 %}negative{% else %}neutral{% endif %}">
+                        {% if item.goal_difference > 0 %}+{% endif %}{{ item.goal_difference }}
+                    </td>
+                    <td class="points-cell">{{ item.points }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+        <h4>Legenda:</h4>
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 20px; background: #3498db; border-radius: 2px;"></div>
+                <span>Liga Mistrzów (1-4)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 20px; background: #f39c12; border-radius: 2px;"></div>
+                <span>Liga Europy (5)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 20px; height: 20px; background: #e74c3c; border-radius: 2px;"></div>
+                <span>Spadek (18-20)</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

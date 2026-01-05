@@ -1,11 +1,24 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Strona główna{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
 
 {% block content %}
-    <div class="jumbotron text-center bg-light p-5 rounded">
-        <h1 class="display-4">Witamy w Football App!</h1>
-        <p class="lead">Twoje centrum danych piłkarskich - automatyczne wyniki, tabele i statystyki.</p>
-        <hr class="my-4">
-        <p>Odkryj najnowsze wyniki meczów, analizy i statystyki w jednym miejscu.</p>
-        <a class="btn btn-primary btn-lg" href="#" role="button">Dowiedz się więcej</a>
+<h1>⚽ Witaj w Football App</h1>
+<div class="home-grid">
+    <div class="home-card">
+        <h2>📊 Drużyny</h2>
+        <p>Przeglądaj wszystkie drużyny, ich statystyki i składy.</p>
+        <a href="{% url 'core:team_list' %}" class="btn">Zobacz drużyny</a>
     </div>
+    <div class="home-card">
+        <h2>⚽ Mecze</h2>
+        <p>Sprawdź wyniki, terminarze i statystyki meczów.</p>
+        <a href="{% url 'core:matchlist' %}" class="btn">Zobacz mecze</a>
+    </div>
+</div>
 {% endblock %}

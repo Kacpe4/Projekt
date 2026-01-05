@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ team.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/team.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="team-header">
+        {% if team.logo %}
+        <img src="{{ team.logo }}" alt="{{ team.name }}" class="team-logo-large">
+        {% endif %}
+        <div>
+            <h1>{{ team.name }}</h1>
+            {% if team.stadium_name %}
+            <p style="color: #7f8c8d; margin-top: 0.5rem;">🏟️ {{ team.stadium_name }}
+                {% if team.stadium_capacity %}({{ team.stadium_capacity }} miejsc){% endif %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <h2>📊 Statystyki</h2>
+    <div class="stats-grid">
+        <div class="stat-box stat-matches">
+            <div class="stat-value">{{ stats.total_matches }}</div>
+            <div class="stat-label">Mecze</div>
+        </div>
+        <div class="stat-box stat-wins">
+            <div class="stat-value">{{ stats.wins }}</div>
+            <div class="stat-label">Wygrane</div>
+        </div>
+        <div class="stat-box stat-draws">
+            <div class="stat-value">{{ stats.draws }}</div>
+            <div class="stat-label">Remisy</div>
+        </div>
+        <div class="stat-box stat-losses">
+            <div class="stat-value">{{ stats.losses }}</div>
+            <div class="stat-label">Porażki</div>
+        </div>
+        <div class="stat-box" style="background: #d5e8f7;">
+            <div class="stat-value">{{ stats.goals_scored }}</div>
+            <div class="stat-label">Bramki strzelone</div>
+        </div>
+        <div class="stat-box" style="background: #fce4e4;">
+            <div class="stat-value">{{ stats.goals_conceded }}</div>
+            <div class="stat-label">Bramki stracone</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>⚽ Ostatnie mecze</h2>
+    {% for match in recent_matches %}
+    <a href="{% url 'core:match_detail' match.event_id %}" class="match-item">
+        <div class="match-content">
+            <div style="flex: 1; text-align: right; font-weight: bold;">{{ match.home_team.name }}</div>
+            <div style="padding: 0 2rem; font-size: 1.5rem;">
+                {% if match.event_stage == '3' %}
+                    {{ match.home_score }} : {{ match.away_score }}
+                {% else %}
+                    - : -
+                {% endif %}
+            </div>
+            <div style="flex: 1; font-weight: bold;">{{ match.away_team.name }}</div>
+            <div style="color: #7f8c8d;">{{ match.start_time|date:"d.m.Y" }}</div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h2>👥 Kadra</h2>
+    {% regroup players by position as position_list %}
+    {% for position_group in position_list %}
+    <h3 class="position-title">{{ position_group.grouper }}</h3>
+    <div class="players-grid">
+        {% for player in position_group.list %}
+        <div class="player-item">
+            {{ player.full_name }}
+            {% if player.teams.first.jersey_number %}
+                <span style="color: #7f8c8d;">#{{ player.teams.first.jersey_number }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
