@@ -1,8 +1,21 @@
 from django.shortcuts import render, get_object_or_404
 from django.views import View
 from django.db.models import Q, Count
-from .models import Team, Match, Player, MatchStatistic
+from .models import Team, Match, Player, MatchStatistic, Season, League
+from collections import OrderedDict
 
+IMPORTANT_STATS = [
+    'Ball Possession',
+    'Expected Goals (xG)',
+    'Shots on target',
+    'Total shots',
+    'Passes',
+    'Fouls',
+    'Corner Kicks',
+    'Tackles',
+    'Yellow Cards',
+    'Red Cards',
+]
 
 class HomePageView(View):
     def get(self, request):
@@ -50,13 +63,59 @@ class TeamDetailView(View):
             (m.away_score or 0) if m.home_team == team else (m.home_score or 0) for m in finished_matches)
 
         # Zawodnicy drużyny
-        players = Player.objects.filter(teams__team=team).distinct()
+        players = (
+            Player.objects
+            .filter(teams__team=team)
+            .prefetch_related('teams')  # prefetch, zmniejsza liczbę zapytań
+            .order_by('position', 'first_name', 'last_name')  # konieczne dla poprawnego regroup
+            .distinct()  # usuwa powtarzające się wiersze z JOIN
+        )
+        IMPORTANT_STATS = [
+            'Ball Possession',
+            'Expected Goals (xG)',
+            'Shots on target',
+            'Total shots',
+            'Passes',
+            'Fouls',
+            'Corner Kicks',
+            'Tackles',
+            'Yellow Cards',
+            'Red Cards',
+        ]
+
+        # pobierz ostatnie mecze (np. 10) i prefetch statistics, home/away
+        matches_qs = (
+            Match.objects
+            .filter(Q(home_team=team) | Q(away_team=team))
+            .order_by('-start_time')
+            .prefetch_related('statistics', 'home_team', 'away_team')
+        )
+        recent_ten_matches = list(matches_qs[:10])  # konwertujemy do listy, żeby móc użyć |length w szablonie
+
+        # zliczanie i obliczenie średnich
+        totals = OrderedDict((name, {'sum': 0.0, 'count': 0}) for name in IMPORTANT_STATS)
+
+        for match in recent_matches:
+            is_home = (match.home_team_id == team.participant_id)
+            for stat in match.statistics.all():
+                if stat.stat_name in totals:
+                    val = stat.home_value_numeric if is_home else stat.away_value_numeric
+                    if val is not None:
+                        totals[stat.stat_name]['sum'] += val
+                        totals[stat.stat_name]['count'] += 1
+
+        avg_stats = []
+        for name, data in totals.items():
+            avg = (data['sum'] / data['count']) if data['count'] else None
+            avg_stats.append((name, avg))
 
         context = {
             'team': team,
             'recent_matches': recent_matches,
             'all_matches': matches,
             'players': players,
+            'avg_stats': avg_stats,
+            'recent_ten_matches': recent_ten_matches,
             'stats': {
                 'total_matches': total_matches,
                 'wins': wins,
@@ -107,20 +166,58 @@ class MatchDetailView(View):
         return render(request, 'core/match_detail.html', context)
 
 
+# python
+from django.http import Http404
+
 class LeagueTableView(View):
-    def get(self, request):
-        # Pobierz wszystkie zakończone mecze
-        finished_matches = Match.objects.filter(event_stage='3').select_related('home_team', 'away_team')
+    def get(self, request, league_id=None):
+        # Rozpoznaj ligę: najpierw tournament_id, potem tournament_template_id, potem pk
+        league = None
+        if league_id:
+            league = League.objects.filter(tournament_id=league_id).first()
+            if not league:
+                league = League.objects.filter(tournament_template_id=league_id).first()
+            if not league:
+                try:
+                    league = League.objects.get(pk=int(league_id))
+                except (ValueError, League.DoesNotExist):
+                    league = None
+            if not league:
+                raise Http404("League not found")
 
-        # Słownik do przechowywania statystyk drużyn
+        # Sezony (dla danej ligi lub wszystkie)
+        seasons = Season.objects.filter(league=league).order_by('-season_id') if league else Season.objects.all().order_by('-season_id')
+
+        # Wybór sezonu z parametru GET (season_id odpowiada polu season_id w modelu)
+        season_id = request.GET.get('season_id')
+        selected_season = None
+        if season_id:
+            try:
+                season_id_int = int(season_id)
+            except (ValueError, TypeError):
+                season_id_int = None
+            if season_id_int is not None:
+                q = Season.objects.filter(season_id=season_id_int)
+                if league:
+                    q = q.filter(league=league)
+                selected_season = q.first()
+
+        if not selected_season:
+            selected_season = seasons.first()
+
+        if not selected_season:
+            return render(request, 'core/league_table.html', {'table': [], 'seasons': seasons, 'selected_season': None, 'league': league})
+
+        # Pobierz zakończone mecze dla sezonu
+        finished_matches = Match.objects.filter(event_stage='3', season=selected_season).select_related('home_team', 'away_team')
+
+        # Obliczanie tabeli
         teams_stats = {}
-
         for match in finished_matches:
             home_score = match.home_score or 0
             away_score = match.away_score or 0
 
-            # Inicjalizacja statystyk dla drużyn
-            for team in [match.home_team, match.away_team]:
+            for team in (match.home_team, match.away_team):
                 if team.participant_id not in teams_stats:
                     teams_stats[team.participant_id] = {
                         'team': team,
@@ -134,19 +231,17 @@ class LeagueTableView(View):
                         'points': 0
                     }
 
-            # Aktualizacja statystyk gospodarzy
             home_stats = teams_stats[match.home_team.participant_id]
+            away_stats = teams_stats[match.away_team.participant_id]
+
             home_stats['played'] += 1
             home_stats['goals_for'] += home_score
             home_stats['goals_against'] += away_score
 
-            # Aktualizacja statystyk gości
-            away_stats = teams_stats[match.away_team.participant_id]
             away_stats['played'] += 1
             away_stats['goals_for'] += away_score
             away_stats['goals_against'] += home_score
 
-            # Określ wynik
             if home_score > away_score:
                 home_stats['wins'] += 1
                 home_stats['points'] += 3
@@ -161,17 +256,19 @@ class LeagueTableView(View):
                 home_stats['points'] += 1
                 away_stats['points'] += 1
 
-        # Oblicz bilans bramkowy i posortuj
         table = []
         for stats in teams_stats.values():
             stats['goal_difference'] = stats['goals_for'] - stats['goals_against']
             table.append(stats)
 
-        # Sortowanie: punkty, bilans, bramki strzelone
         table.sort(key=lambda x: (-x['points'], -x['goal_difference'], -x['goals_for']))
 
-        # Dodaj pozycję w tabeli
         for idx, team_stats in enumerate(table, 1):
             team_stats['position'] = idx
 
-        return render(request, 'core/league_table.html', {'table': table})
+        return render(request, 'core/league_table.html', {
+            'table': table,
+            'seasons': seasons,
+            'selected_season': selected_season,
+            'league': league,
+        })

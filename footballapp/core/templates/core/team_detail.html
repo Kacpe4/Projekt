@@ -71,22 +71,42 @@
     </a>
     {% endfor %}
 </div>
-
+{% if avg_stats %}
+<div class="card">
+  <h2>📈 Średnie statystyki (ostatnie {{ recent_ten_matches|length }} mecze)</h2>
+  <table class="avg-stats" style="width:100%; border-collapse:collapse;">
+    <tbody>
+      {% for name,value in avg_stats %}
+      <tr style="border-top:1px solid #eee;">
+        <td style="padding:0.5rem 0;">{{ name }}</td>
+        <td style="padding:0.5rem 0; text-align:right; font-weight:600;">
+          {% if value %}
+            {{ value|floatformat:2 }}{% if name == 'Ball Possession' %}%{% endif %}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
 <div class="card">
     <h2>👥 Kadra</h2>
     {% regroup players by position as position_list %}
-    {% for position_group in position_list %}
-    <h3 class="position-title">{{ position_group.grouper }}</h3>
-    <div class="players-grid">
-        {% for player in position_group.list %}
-        <div class="player-item">
-            {{ player.full_name }}
-            {% if player.teams.first.jersey_number %}
-                <span style="color: #7f8c8d;">#{{ player.teams.first.jersey_number }}</span>
-            {% endif %}
-        </div>
-        {% endfor %}
-    </div>
+{% for position_group in position_list %}
+  <h3 class="position-title">{{ position_group.grouper }}</h3>
+  <div class="players-grid" style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+    {% for player in position_group.list %}
+      <div class="player-item" style="flex:0 0 200px; border:1px solid #eee; padding:0.5rem; border-radius:4px;">
+        <div class="player-name">{{ player.full_name }}</div>
+        {% if player.teams.first and player.teams.first.jersey_number %}
+          <div class="player-number" style="color:#7f8c8d;">#{{ player.teams.first.jersey_number }}</div>
+        {% endif %}
+      </div>
     {% endfor %}
+  </div>
+{% endfor %}
 </div>
 {% endblock %}

@@ -1,3 +1,4 @@
+<!-- html -->
 {% extends 'base.html' %}
 {% load static %}
 
@@ -9,6 +10,30 @@
 
 {% block content %}
 <h1>📊 Tabela Ligowa</h1>
+
+{# SELEKTOR SEZONU - wstawić tuż pod nagłówkiem #}
+<form method="get" style="margin: 0 0 1rem 0; display:flex; align-items:center; gap:1rem;">
+    {% if seasons %}
+        <label for="season-select" style="font-weight:600;">Sezon:</label>
+        <select id="season-select" name="season_id" onchange="this.form.submit()" style="padding:0.35rem;">
+            <option value="">-- wszystkie --</option>
+            {% for s in seasons %}
+                <option value="{{ s.season_id }}" {% if selected_season and s.season_id == selected_season.season_id %}selected{% endif %}>
+                    {{ s.name|default:"Unknown" }} ({{ s.season_id }})
+                </option>
+            {% endfor %}
+        </select>
+        <noscript><button type="submit">Pokaż</button></noscript>
+
+        {% if selected_season %}
+            <div style="margin-left:1rem; font-size:0.95rem; color:#555;">
+                Wybrany sezon: <strong>{{ selected_season.name|default:selected_season.season_id }}</strong>
+            </div>
+        {% endif %}
+    {% else %}
+        <div style="color:#888;">Brak dostępnych sezonów.</div>
+    {% endif %}
+</form>
 
 <div class="league-table">
     <div class="table-container">
@@ -54,7 +79,7 @@
             </tbody>
         </table>
     </div>
-    
+
     <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
         <h4>Legenda:</h4>
         <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1rem;">

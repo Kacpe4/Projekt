@@ -353,59 +353,6 @@ class FootballDataService:
 
         return team
 
-    def fetch_matches(self, country_id: str, league_template_id: str,
-                      season: str, page: int = 1) -> List[Dict]:
-        """Pobiera listę meczy dla danej ligi i sezonu"""
-
-        # Usuń spacje jeśli są
-        country_id = country_id.replace(' ', '')
-        league_template_id = league_template_id.replace(' ', '')
-
-        url = f"{self.BASE_URL}/football/{country_id}/{league_template_id}/{season}/results"
-        params = {'page': page}
-
-        print(f"📡 Full URL: {url}? page={page}")
-
-        try:
-            response = self.session.get(url, params=params)
-            print(f"   Status Code: {response.status_code}")
-
-            response.raise_for_status()
-
-            # Pokaż surową odpowiedź
-            raw_text = response.text
-            print(f"   Raw response (first 500 chars): {raw_text[:500]}")
-
-            data = response.json()
-            print(f"   Data type: {type(data)}")
-
-            if isinstance(data, dict):
-                print(f"   Keys: {list(data.keys())}")
-
-                # Spróbuj różnych kluczy
-                for key in ['results', 'data', 'matches', 'events', 'items']:
-                    if key in data:
-                        print(f"   Found data under key: '{key}' with {len(data[key])} items")
-                        return data[key]
-
-                # Jeśli żaden klucz nie pasuje, zwróć całą odpowiedź
-                print(f"   ⚠️ Unknown structure, returning full response")
-                return [data] if data else []
-
-            elif isinstance(data, list):
-                print(f"   Direct list with {len(data)} items")
-                return data
-            else:
-                print(f"   ⚠️ Unexpected data type: {type(data)}")
-                return []
-
-        except requests.exceptions.HTTPError as e:
-            print(f"❌ HTTP Error {response.status_code}")
-            print(f"   Response text: {response.text[: 1000]}")
-            raise
-        except Exception as e:
-            print(f"❌ Unexpected error: {e}")
-            raise
     def fetch_all_teams_squads(self, only_without_details: bool = True):
         """Pobiera kadry dla wszystkich drużyn w bazie"""
         teams = Team.objects.all()
