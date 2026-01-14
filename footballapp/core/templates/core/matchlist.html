@@ -4,6 +4,64 @@
 
 {% block content %}
 <h1>⚽ Wszystkie mecze</h1>
+<div style="margin-bottom:1rem; display:flex; gap:1rem; align-items:center;">
+    {% if leagues %}
+        <label for="league-filter" style="font-weight:600;">Liga:</label>
+        <select id="league-filter" style="padding:0.35rem;">
+            <option value="">-- wszystkie --</option>
+            {% for l in leagues %}
+                {% if l.tournament_template_id %}
+                    <option value="{{ l.tournament_template_id }}" {% if selected_lid == l.tournament_template_id|stringformat:"s" %}selected{% endif %}>{{ l.name }}</option>
+                {% elif l.tournament_id %}
+                    <option value="{{ l.tournament_id }}" {% if selected_lid == l.tournament_id|stringformat:"s" %}selected{% endif %}>{{ l.name }}</option>
+                {% else %}
+                    <option value="{{ l.pk }}" {% if selected_lid == l.pk|stringformat:"s" %}selected{% endif %}>{{ l.name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    {% endif %}
+
+    {% if seasons %}
+        <label for="season-filter" style="font-weight:600;">Sezon:</label>
+        <select id="season-filter" style="padding:0.35rem;">
+            <option value="">-- wszystkie --</option>
+            {% for s in seasons %}
+                <option value="{{ s.season_id }}" {% if selected_season and selected_season.season_id == s.season_id %}selected{% endif %}>{{ s.name }} ({{ s.season_id }})</option>
+            {% endfor %}
+        </select>
+    {% endif %}
+
+    {% if teams %}
+        <label for="team-filter" style="font-weight:600;">Drużyna:</label>
+        <select id="team-filter" style="padding:0.35rem;">
+            <option value="">-- wszystkie --</option>
+            {% for t in teams %}
+                <option value="{{ t.participant_id }}" {% if selected_team and selected_team.participant_id == t.participant_id %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+        </select>
+    {% endif %}
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var leagueFilter = document.getElementById('league-filter');
+        var seasonFilter = document.getElementById('season-filter');
+        function applyFilters() {
+            var q = [];
+            if (leagueFilter && leagueFilter.value) q.push('league_id=' + encodeURIComponent(leagueFilter.value));
+            if (seasonFilter && seasonFilter.value) q.push('season_id=' + encodeURIComponent(seasonFilter.value));
+            var teamFilter = document.getElementById('team-filter');
+            if (teamFilter && teamFilter.value) q.push('team_id=' + encodeURIComponent(teamFilter.value));
+            var url = '{% url "core:matchlist" %}';
+            if (q.length) url += '?' + q.join('&');
+            window.location.href = url;
+        }
+        if (leagueFilter) leagueFilter.addEventListener('change', applyFilters);
+        if (seasonFilter) seasonFilter.addEventListener('change', applyFilters);
+        var teamFilterEl = document.getElementById('team-filter');
+        if (teamFilterEl) teamFilterEl.addEventListener('change', applyFilters);
+     });
+ </script>
+
 <div style="background: white; padding: 2rem; border-radius: 8px;">
     {% for match in matches %}
     <a href="{% url 'core:match_detail' match.event_id %}" style="display: block; padding: 1.5rem; margin-bottom: 1rem; background: #f8f9fa; border-radius: 4px; text-decoration: none; color: inherit; border-left: 4px solid {% if match.event_stage == '3' %}#27ae60{% elif match.event_stage == '2' %}#e74c3c{% else %}#3498db{% endif %};">

@@ -7,9 +7,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         # Usuń spacje z wartości domyślnych
-        parser.add_argument('--country-id', type=str, default='england: 198')  # BEZ SPACJI!
-        parser.add_argument('--league-id', type=str, default='premier-league: dYlOSQOD')  # BEZ SPACJI!
-        parser.add_argument('--season', type=str, default='2024-2025')  # Może sezon 2025-2026 jeszcze nie istnieje?
+        parser.add_argument('--country-id', type=str, default='england:198')  # BEZ SPACJI!
+        parser.add_argument('--league-id', type=str, default='premier-league:dYlOSQOD')  # BEZ SPACJI!
+        parser.add_argument('--season', type=str, default='2025-2026')  # Może sezon 2025-2026 jeszcze nie istnieje?
         parser.add_argument('--max-pages', type=int, default=10)
         parser.add_argument('--fetch-squads', action='store_true', help='Fetch team squads too')
 
