@@ -1,5 +1,6 @@
-from django. contrib import admin
-from .models import League, Season, Team, Match, MatchStatistic, Player, Country, TeamSquad, StatDefinition
+from django.contrib import admin
+# Dodałem NewsArticle do listy importów poniżej:
+from .models import League, Season, Team, Match, MatchStatistic, Player, Country, TeamSquad, StatDefinition, NewsArticle 
 
 @admin.register(League)
 class LeagueAdmin(admin.ModelAdmin):
@@ -17,7 +18,7 @@ class TeamAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_filter = ['details_fetched']
 
-@admin. register(Match)
+@admin.register(Match)
 class MatchAdmin(admin.ModelAdmin):
     list_display = ['event_id', 'home_team', 'away_team', 'start_time', 'event_stage', 'home_score', 'away_score']
     list_filter = ['event_stage', 'season']
@@ -49,3 +50,13 @@ class TeamSquadAdmin(admin.ModelAdmin):
 class StatDefinitionAdmin(admin.ModelAdmin):
     list_display = ['stat_id', 'stat_name', 'category']
     search_fields = ['stat_name']
+
+# --- TUTAJ DODAŁEM SEKCJĘ NEWSÓW ---
+@admin.register(NewsArticle)
+class NewsArticleAdmin(admin.ModelAdmin):
+    # Co chcemy widzieć w tabelce: Tytuł, Źródło, Data
+    list_display = ['title', 'source_name', 'published_date']
+    # Filtrowanie po źródle (gdybyś dodał np. Sky Sports później)
+    list_filter = ['source_name']
+    # Pasek wyszukiwania po tytule
+    search_fields = ['title', 'description']

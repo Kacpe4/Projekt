@@ -1,0 +1,23 @@
+/* Styl dla tła strony logowania */
+.login-container {
+    height: 100vh;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1920&q=80');
+    background-size: cover;
+    background-position: center;
+}
+
+/* Styl dla karty logowania */
+.card {
+    background: rgba(255, 255, 255, 0.95); /* Delikatna przezroczystość */
+    border: none;
+}
+
+/* Poprawa wyglądu pól formularza Django */
+input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-top: 5px;
+}

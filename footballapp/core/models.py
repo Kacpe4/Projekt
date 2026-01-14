@@ -1,6 +1,5 @@
-from django. db import models
+from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-
 
 class League(models.Model):
     """Liga piłkarska"""
@@ -55,6 +54,7 @@ class Team(models.Model):
         ('Y', 'Youth'),
     ]
 
+    # Tu jest kluczowa zmiana, o którą pytał błąd: participant_id
     participant_id = models.CharField(max_length=50, unique=True, primary_key=True)
     name = models.CharField(max_length=200)
     short_name = models.CharField(max_length=100, blank=True)
@@ -113,13 +113,13 @@ class Player(models.Model):
 
     @property
     def full_name(self):
-        return f"{self.first_name} {self. last_name}".strip() or self.last_name
+        return f"{self.first_name} {self.last_name}".strip() or self.last_name
 
 
 class TeamSquad(models.Model):
     """Relacja zawodnik-drużyna"""
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='squad_members')
-    player = models. ForeignKey(Player, on_delete=models.CASCADE, related_name='teams')
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='teams')
 
     tournament_id = models.CharField(max_length=50, blank=True)
     tournament_type = models.CharField(max_length=50, blank=True)
@@ -132,11 +132,11 @@ class TeamSquad(models.Model):
         verbose_name_plural = "Team Squad Members"
         unique_together = ['team', 'player', 'tournament_id']
         indexes = [
-            models. Index(fields=['team', 'tournament_id']),
+            models.Index(fields=['team', 'tournament_id']),
         ]
 
     def __str__(self):
-        return f"{self. player.full_name} - {self.team.name} (#{self.jersey_number})"
+        return f"{self.player.full_name} - {self.team.name} (#{self.jersey_number})"
 
 
 class Match(models.Model):
@@ -189,14 +189,14 @@ class Match(models.Model):
         ordering = ['-start_time']
         indexes = [
             models.Index(fields=['season', 'start_time']),
-            models. Index(fields=['event_stage']),
+            models.Index(fields=['event_stage']),
         ]
 
     def __str__(self):
         return f"{self.home_team.name} vs {self.away_team.name} ({self.start_time.date()})"
 
 
-class MatchStatistic(models. Model):
+class MatchStatistic(models.Model):
     """Statystyki meczu"""
     PERIOD_CHOICES = [
         ('match', 'Match'),
@@ -244,9 +244,9 @@ class MatchStatistic(models. Model):
 
 class StatDefinition(models.Model):
     """Definicje statystyk"""
-    stat_id = models. CharField(max_length=10, unique=True, primary_key=True)
+    stat_id = models.CharField(max_length=10, unique=True, primary_key=True)
     stat_name = models.CharField(max_length=100)
-    description = models. TextField(blank=True)
+    description = models.TextField(blank=True)
     category = models.CharField(max_length=50, blank=True)
 
     class Meta:
@@ -255,3 +255,19 @@ class StatDefinition(models.Model):
 
     def __str__(self):
         return f"{self.stat_id} - {self.stat_name}"
+    
+    # ... (twoje inne modele: League, Team itp.)
+
+class NewsArticle(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    url = models.URLField(unique=True)  # Link do pełnego artykułu (unikalny)
+    image_url = models.URLField(blank=True, null=True)
+    published_date = models.DateTimeField()
+    source_name = models.CharField(max_length=100)  # np. "Sky Sports"
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ['-published_date'] # Najnowsze na górze

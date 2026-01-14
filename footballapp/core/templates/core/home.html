@@ -4,21 +4,55 @@
 {% block title %}Strona główna{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
 {% endblock %}
 
 {% block content %}
-<h1>⚽ Witaj w Football App</h1>
-<div class="home-grid">
-    <div class="home-card">
-        <h2>📊 Drużyny</h2>
-        <p>Przeglądaj wszystkie drużyny, ich statystyki i składy.</p>
-        <a href="{% url 'core:team_list' %}" class="btn">Zobacz drużyny</a>
-    </div>
-    <div class="home-card">
-        <h2>⚽ Mecze</h2>
-        <p>Sprawdź wyniki, terminarze i statystyki meczów.</p>
-        <a href="{% url 'core:matchlist' %}" class="btn">Zobacz mecze</a>
-    </div>
+<div class="text-center my-5">
+    <h1 class="display-4 fw-bold">⚽ Witaj w Football App</h1>
+    <p class="lead text-muted">Twoje centrum statystyk piłkarskich</p>
 </div>
+
+{% if user.is_authenticated %}
+
+    <div class="home-grid">
+        
+        <div class="home-card">
+            <h2>📊 Drużyny</h2>
+            <p>Przeglądaj wszystkie drużyny, ich statystyki i składy.</p>
+            <a href="{% url 'core:team_list' %}" class="btn btn-primary">Zobacz drużyny</a>
+        </div>
+
+        <div class="home-card">
+            <h2>⚽ Mecze</h2>
+            <p>Sprawdź wyniki, terminarze i statystyki meczów.</p>
+            <a href="{% url 'core:matchlist' %}" class="btn btn-primary">Zobacz mecze</a>
+        </div>
+
+        <div class="home-card" style="border-top: 5px solid #0d6efd;">
+            <h2 class="text-primary">👤 Twój Profil</h2>
+            <p>Witaj, <strong>{{ user.username }}</strong>!</p>
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger w-100 mt-2">Wyloguj się</button>
+            </form>
+        </div>
+
+    </div>
+
+{% else %}
+
+    <div class="d-flex justify-content-center">
+        <div class="home-card" style="max-width: 500px; width: 100%; border-top: 5px solid #ffc107;">
+            <h2 class="text-warning mb-3">🔒 Dostęp zablokowany</h2>
+            <p class="lead">Musisz się zalogować, aby przeglądać mecze i drużyny.</p>
+            <hr>
+            <div class="d-grid gap-2">
+                <a href="{% url 'login' %}" class="btn btn-success btn-lg">Zaloguj się</a>
+                <a href="{% url 'signup' %}" class="btn btn-outline-primary">Załóż konto</a>
+            </div>
+        </div>
+    </div>
+
+{% endif %}
 {% endblock %}

@@ -1,11 +1,15 @@
 from django.shortcuts import render, get_object_or_404
 from django.views import View
 from django.db.models import Q
+from .models import NewsArticle
 from .models import Team, Match, Player, MatchStatistic, Season, League
 from collections import OrderedDict
 from django.http import Http404, JsonResponse
 from django.template.loader import render_to_string
 from  .services.prediction_service import MatchPredictionService
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 IMPORTANT_STATS = [
     'Ball Possession',
@@ -25,7 +29,7 @@ class HomePageView(View):
         return render(request, 'core/home.html')
 
 
-class MatchlistView(View):
+class MatchlistView(LoginRequiredMixin,View):
     def get(self, request):
         # Filtry GET: league_id (tournament_template_id / tournament_id / pk) i season_id (integer)
         league_id = request.GET.get('league_id')
@@ -135,13 +139,13 @@ class MatchlistView(View):
         })
 
 
-class TeamListView(View):
+class TeamListView(LoginRequiredMixin, View):
     def get(self, request):
         teams = Team.objects.all().order_by('name')
         return render(request, 'core/team_list.html', {'teams': teams})
 
 
-class TeamDetailView(View):
+class TeamDetailView(LoginRequiredMixin, View):
     def get(self, request, team_id):
         team = get_object_or_404(Team, participant_id=team_id)
 
@@ -235,7 +239,7 @@ class TeamDetailView(View):
         return render(request, 'core/team_detail.html', context)
 
 
-class MatchDetailView(View):
+class MatchDetailView(LoginRequiredMixin, View):
     def get(self, request, match_id):
         match = get_object_or_404(Match, event_id=match_id)
 
@@ -409,6 +413,27 @@ class LeagueTableView(View):
         for idx, team_stats in enumerate(table, 1):
             team_stats['position'] = idx
 
+        return render(request, 'core/league_table.html', {'table': table})
+
+
+# --- TUTAJ BYŁ BŁĄD: TERAZ JEST POPRAWNIE (BEZ WCIĘCIA) ---
+
+def news_list(request):
+    # Pobieramy 20 najnowszych newsów
+    articles = NewsArticle.objects.all()[:20]
+    return render(request, 'core/news_list.html', {'articles': articles})
+
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            # TUTAJ BYŁ BŁĄD. Musi być 'core:home' zamiast 'home'
+            return redirect('core:home') 
+    else:
+        form = UserCreationForm()
+    return render(request, 'signup.html', {'form': form})
         return render(request, 'core/league_table.html', {
             'table': table,
             'seasons': seasons,
