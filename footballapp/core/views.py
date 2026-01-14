@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.db.models import Q
 from .models import NewsArticle
@@ -413,7 +413,14 @@ class LeagueTableView(View):
         for idx, team_stats in enumerate(table, 1):
             team_stats['position'] = idx
 
-        return render(request, 'core/league_table.html', {'table': table})
+        return render(request, 'core/league_table.html', {
+            'table': table,
+            'seasons': seasons,
+            'selected_season': selected_season,
+            'league': league,
+            'leagues': leagues,
+            'selected_lid': selected_lid,
+        })
 
 
 # --- TUTAJ BYŁ BŁĄD: TERAZ JEST POPRAWNIE (BEZ WCIĘCIA) ---
@@ -433,15 +440,7 @@ def signup(request):
             return redirect('core:home') 
     else:
         form = UserCreationForm()
-    return render(request, 'signup.html', {'form': form})
-        return render(request, 'core/league_table.html', {
-            'table': table,
-            'seasons': seasons,
-            'selected_season': selected_season,
-            'league': league,
-            'leagues': leagues,
-            'selected_lid': selected_lid,
-        })
+    return render(request, 'core/signup.html', {'form': form})
 
 
 def _build_table_for_season(selected_season):
