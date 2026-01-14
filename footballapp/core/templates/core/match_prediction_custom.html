@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Wybierz Mecz do Przewidzenia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .custom-prediction-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+    }
+
+    .page-header h1 {
+        margin: 0 0 10px 0;
+        font-size: 2.5em;
+    }
+
+    .predictions-nav {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    .nav-btn {
+        padding: 12px 24px;
+        background: white;
+        border: 2px solid #667eea;
+        border-radius: 5px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .nav-btn:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    .nav-btn.active {
+        background: #667eea;
+        color: white;
+    }
+
+    .selection-form {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        align-items: flex-end;
+    }
+
+    .form-group {
+        flex: 1;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 5px;
+        font-size: 1em;
+        background: white;
+    }
+
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .submit-btn {
+        padding: 12px 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .prediction-result {
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    }
+
+    .match-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .match-teams {
+        font-size: 1.5em;
+        font-weight: 600;
+        margin: 20px 0;
+    }
+
+    .vs {
+        color: #999;
+        margin: 0 20px;
+    }
+
+    .prediction-main {
+        text-align: center;
+        padding: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        color: white;
+        margin-bottom: 30px;
+    }
+
+    .prediction-value {
+        font-size: 4em;
+        font-weight: bold;
+        margin: 20px 0;
+    }
+
+    .confidence {
+        font-size: 1.5em;
+    }
+
+    .probabilities {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .prob-item {
+        flex: 1;
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+    }
+
+    .prob-item.highest {
+        border-color: #667eea;
+        background: #f0f3ff;
+    }
+
+    .prob-label {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .prob-value {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .team-stats {
+        display: flex;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .team-stat-card {
+        flex: 1;
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .team-stat-card h3 {
+        margin-top: 0;
+        color: #667eea;
+        font-size: 1.2em;
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .stat-row:last-child {
+        border-bottom: none;
+    }
+
+    .stat-label {
+        font-weight: 500;
+        color: #666;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="custom-prediction-container">
+    <div class="page-header">
+        <h1>⚽ Wybierz Mecz do Przewidzenia</h1>
+        <p>Wybierz dwie drużyny, aby zobaczyć przewidywany wynik</p>
+    </div>
+
+    <div class="predictions-nav">
+        <a href="{% url 'core:match_predictions' %}" class="nav-btn">Nadchodzące mecze</a>
+        <a href="{% url 'core:predict_custom' %}" class="nav-btn active">Własny wybór drużyn</a>
+    </div>
+
+    <div class="selection-form">
+        <form method="get">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="home_team">Gospodarz</label>
+                    <select name="home_team" id="home_team" required>
+                        <option value="">-- Wybierz drużynę gospodarzy --</option>
+                        {% for team in teams %}
+                        <option value="{{ team.participant_id }}" {% if home_team and home_team.participant_id == team.participant_id %}selected{% endif %}>
+                            {{ team.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="away_team">Goście</label>
+                    <select name="away_team" id="away_team" required>
+                        <option value="">-- Wybierz drużynę gości --</option>
+                        {% for team in teams %}
+                        <option value="{{ team.participant_id }}" {% if away_team and away_team.participant_id == team.participant_id %}selected{% endif %}>
+                            {{ team.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-btn">Przewiduj →</button>
+            </div>
+        </form>
+    </div>
+
+    {% if prediction %}
+        {% if prediction.error %}
+        <div class="error-message">
+            <h3>Błąd</h3>
+            <p>{{ prediction.error }}</p>
+        </div>
+        {% else %}
+        <div class="prediction-result">
+            <div class="match-header">
+                <h2>Przewidywany wynik meczu</h2>
+                <div class="match-teams">
+                    {{ home_team.name }}
+                    <span class="vs">vs</span>
+                    {{ away_team.name }}
+                </div>
+            </div>
+
+            <div class="prediction-main">
+                <div style="font-size: 1.2em; opacity: 0.9;">Przewidywany wynik</div>
+                <div class="prediction-value">{{ prediction.prediction }}</div>
+                <div class="confidence">Pewność: {{ prediction.confidence }}%</div>
+            </div>
+
+            <div class="probabilities">
+                {% for outcome, prob in prediction.probabilities.items %}
+                <div class="prob-item {% if outcome == prediction.prediction %}highest{% endif %}">
+                    <div class="prob-label">
+                        {% if outcome == '1' %}Wygrana gospodarzy
+                        {% elif outcome == 'X' %}Remis
+                        {% else %}Wygrana gości{% endif %}
+                    </div>
+                    <div class="prob-value">{{ prob }}%</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="team-stats">
+                <div class="team-stat-card">
+                    <h3>{{ home_team.name }}</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Średnia goli (ostatnie 5)</span>
+                        <span class="stat-value">{{ prediction.home_features.avg_goals_scored|floatformat:2 }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Średnia straconych goli</span>
+                        <span class="stat-value">{{ prediction.home_features.avg_goals_conceded|floatformat:2 }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Procent wygranych</span>
+                        <span class="stat-value">{{ prediction.home_features.win_rate|floatformat:1 }}%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Forma (0-1)</span>
+                        <span class="stat-value">{{ prediction.home_features.form|floatformat:2 }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Średnie posiadanie piłki</span>
+                        <span class="stat-value">{{ prediction.home_features.avg_possession|floatformat:1 }}%</span>
+                    </div>
+                </div>
+
+                <div class="team-stat-card">
+                    <h3>{{ away_team.name }}</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Średnia goli (ostatnie 5)</span>
+                        <span class="stat-value">{{ prediction.away_features.avg_goals_scored|floatformat:2 }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Średnia straconych goli</span>
+                        <span class="stat-value">{{ prediction.away_features.avg_goals_conceded|floatformat:2 }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Procent wygranych</span>
+                        <span class="stat-value">{{ prediction.away_features.win_rate|floatformat:1 }}%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Forma (0-1)</span>
+                        <span class="stat-value">{{ prediction.away_features.form|floatformat:2 }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Średnie posiadanie piłki</span>
+                        <span class="stat-value">{{ prediction.away_features.avg_possession|floatformat:1 }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -11,11 +11,101 @@
 {% block content %}
 <h1>📊 Tabela Ligowa</h1>
 
-{# SELEKTOR SEZONU - wstawić tuż pod nagłówkiem #}
-<form method="get" style="margin: 0 0 1rem 0; display:flex; align-items:center; gap:1rem;">
+{# Jeśli nie wybrano ligi — pokaż kafelki lig do wyboru #}
+{% if not league %}
+    <p style="color:#555;">Wybierz ligę, aby zobaczyć tabelę dla danego sezonu.</p>
+    <div class="leagues-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-top:1rem;">
+        {% for l in leagues %}
+            {% if l.tournament_template_id %}
+                <a href="{% url 'core:league_table_by_league' l.tournament_template_id %}" class="league-card" style="display:block; padding:1rem; background:#fff; border:1px solid #e6e6e6; border-radius:6px; text-decoration:none; color:inherit; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <div style="width:44px; height:44px; background:#f0f0f0; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#333; overflow:hidden;">
+                            {% if l.logo %}
+                                <img src="{{ l.logo }}" alt="{{ l.name }}" style="width:44px; height:44px; object-fit:cover;">
+                            {% else %}
+                                {{ l.name|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div style="font-weight:600;">{{ l.name }}</div>
+                            <div style="font-size:0.85rem; color:#666;">{{ l.country }}</div>
+                        </div>
+                    </div>
+                </a>
+            {% elif l.tournament_id %}
+                <a href="{% url 'core:league_table_by_league' l.tournament_id %}" class="league-card" style="display:block; padding:1rem; background:#fff; border:1px solid #e6e6e6; border-radius:6px; text-decoration:none; color:inherit; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <div style="width:44px; height:44px; background:#f0f0f0; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#333; overflow:hidden;">
+                            {% if l.logo %}
+                                <img src="{{ l.logo }}" alt="{{ l.name }}" style="width:44px; height:44px; object-fit:cover;">
+                            {% else %}
+                                {{ l.name|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div style="font-weight:600;">{{ l.name }}</div>
+                            <div style="font-size:0.85rem; color:#666;">{{ l.country }}</div>
+                        </div>
+                    </div>
+                </a>
+            {% else %}
+                <a href="{% url 'core:league_table_by_league' l.pk %}" class="league-card" style="display:block; padding:1rem; background:#fff; border:1px solid #e6e6e6; border-radius:6px; text-decoration:none; color:inherit; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <div style="width:44px; height:44px; background:#f0f0f0; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#333; overflow:hidden;">
+                            {% if l.logo %}
+                                <img src="{{ l.logo }}" alt="{{ l.name }}" style="width:44px; height:44px; object-fit:cover;">
+                            {% else %}
+                                {{ l.name|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div style="font-weight:600;">{{ l.name }}</div>
+                            <div style="font-size:0.85rem; color:#666;">{{ l.country }}</div>
+                        </div>
+                    </div>
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+{% else %}
+
+<div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+    {% if league.logo %}
+        <img src="{{ league.logo }}" alt="{{ league.name }}" style="width:64px; height:64px; object-fit:cover; border-radius:6px;">
+    {% endif %}
+    <div>
+        <h2 style="margin:0;">{{ league.name }}</h2>
+        <div style="color:#666;">{{ league.country }}</div>
+    </div>
+</div>
+
+<form id="league-select-form" method="get" style="margin: 0 0 1rem 0; display:flex; align-items:center; gap:1rem;">
+    {% if leagues %}
+        <label for="league-select" style="font-weight:600;">Liga:</label>
+        <select id="league-select" name="league_id" style="padding:0.35rem;">
+            <option value="">-- wybierz ligę --</option>
+            {% for l in leagues %}
+                {% if l.tournament_template_id %}
+                    {% with lid=l.tournament_template_id|stringformat:"s" %}
+                        <option value="{{ lid }}" {% if selected_lid == lid %}selected{% endif %}>{{ l.name }}</option>
+                    {% endwith %}
+                {% elif l.tournament_id %}
+                    {% with lid=l.tournament_id|stringformat:"s" %}
+                        <option value="{{ lid }}" {% if selected_lid == lid %}selected{% endif %}>{{ l.name }}</option>
+                    {% endwith %}
+                {% else %}
+                    {% with lid=l.pk|stringformat:"s" %}
+                        <option value="{{ lid }}" {% if selected_lid == lid %}selected{% endif %}>{{ l.name }}</option>
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+        </select>
+    {% endif %}
+
     {% if seasons %}
         <label for="season-select" style="font-weight:600;">Sezon:</label>
-        <select id="season-select" name="season_id" onchange="this.form.submit()" style="padding:0.35rem;">
+        <select id="season-select" name="season_id" style="padding:0.35rem;">
             <option value="">-- wszystkie --</option>
             {% for s in seasons %}
                 <option value="{{ s.season_id }}" {% if selected_season and s.season_id == selected_season.season_id %}selected{% endif %}>
@@ -23,79 +113,53 @@
                 </option>
             {% endfor %}
         </select>
-        <noscript><button type="submit">Pokaż</button></noscript>
-
-        {% if selected_season %}
-            <div style="margin-left:1rem; font-size:0.95rem; color:#555;">
-                Wybrany sezon: <strong>{{ selected_season.name|default:selected_season.season_id }}</strong>
-            </div>
-        {% endif %}
-    {% else %}
-        <div style="color:#888;">Brak dostępnych sezonów.</div>
     {% endif %}
+
+    <noscript><button type="submit">Pokaż</button></noscript>
 </form>
 
-<div class="league-table">
-    <div class="table-container">
-        <table class="standings-table">
-            <thead>
-                <tr>
-                    <th style="width: 50px;">#</th>
-                    <th>Drużyna</th>
-                    <th style="text-align: center; width: 60px;">M</th>
-                    <th style="text-align: center; width: 60px;">W</th>
-                    <th style="text-align: center; width: 60px;">R</th>
-                    <th style="text-align: center; width: 60px;">P</th>
-                    <th style="text-align: center; width: 80px;">Bramki</th>
-                    <th style="text-align: center; width: 70px;">Bilans</th>
-                    <th style="text-align: center; width: 70px;">Pkt</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in table %}
-                <tr class="{% if item.position <= 4 %}position-ucl{% elif item.position == 5 %}position-uel{% elif item.position >= 18 %}position-relegation{% endif %}">
-                    <td class="position-cell">{{ item.position }}</td>
-                    <td>
-                        <div class="team-cell">
-                            {% if item.team.logo %}
-                            <img src="{{ item.team.logo }}" alt="{{ item.team.name }}" class="team-logo-small">
-                            {% endif %}
-                            <a href="{% url 'core:team_detail' item.team.participant_id %}" class="team-name-link">
-                                {{ item.team.name }}
-                            </a>
-                        </div>
-                    </td>
-                    <td class="stat-cell">{{ item.played }}</td>
-                    <td class="stat-cell">{{ item.wins }}</td>
-                    <td class="stat-cell">{{ item.draws }}</td>
-                    <td class="stat-cell">{{ item.losses }}</td>
-                    <td class="stat-cell">{{ item.goals_for }}:{{ item.goals_against }}</td>
-                    <td class="stat-cell {% if item.goal_difference > 0 %}positive{% elif item.goal_difference < 0 %}negative{% else %}neutral{% endif %}">
-                        {% if item.goal_difference > 0 %}+{% endif %}{{ item.goal_difference }}
-                    </td>
-                    <td class="points-cell">{{ item.points }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Kafelki mają normalne linki (bez przechwytywania) — klik działa nawet bez JS.
 
-    <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
-        <h4>Legenda:</h4>
-        <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <div style="width: 20px; height: 20px; background: #3498db; border-radius: 2px;"></div>
-                <span>Liga Mistrzów (1-4)</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <div style="width: 20px; height: 20px; background: #f39c12; border-radius: 2px;"></div>
-                <span>Liga Europy (5)</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <div style="width: 20px; height: 20px; background: #e74c3c; border-radius: 2px;"></div>
-                <span>Spadek (18-20)</span>
-            </div>
-        </div>
-    </div>
+        // Dropdown lig (górny) — nadal przekierowuje lub aktualizuje
+        var leagueSelect = document.getElementById('league-select');
+        if (leagueSelect) {
+            leagueSelect.addEventListener('change', function () {
+                var leagueVal = leagueSelect.value;
+                var seasonSelect = document.getElementById('season-select');
+                var seasonVal = seasonSelect ? seasonSelect.value : '';
+                if (!leagueVal) {
+                    var url = '{% url "core:league_table" %}';
+                    if (seasonVal) url += '?season_id=' + encodeURIComponent(seasonVal);
+                    window.location.href = url;
+                    return;
+                }
+                var urlStr = '{% url "core:league_table_by_league" "__LEAGUE__" %}'.replace('__LEAGUE__', encodeURIComponent(leagueVal));
+                if (seasonVal) urlStr += '?season_id=' + encodeURIComponent(seasonVal);
+                window.location.href = urlStr;
+            });
+        }
+
+        // Selekcja sezonu — przeładuj partial tabeli przez AJAX
+        var seasonSelect = document.getElementById('season-select');
+        if (seasonSelect) {
+            seasonSelect.addEventListener('change', function () {
+                var seasonVal = seasonSelect.value;
+                // wyciągnij league z URL
+                var pathParts = window.location.pathname.split('/');
+                var leagueId = pathParts.length > 2 ? pathParts[2] : '';
+                var url = '{% url "core:league_table_partial" "__LEAGUE__" %}'.replace('__LEAGUE__', encodeURIComponent(leagueId));
+                if (seasonVal) url += '?season_id=' + encodeURIComponent(seasonVal);
+                fetch(url).then(function (r) { return r.json(); }).then(function (d) { if (d.html) document.getElementById('table-root').innerHTML = d.html; });
+            });
+        }
+    });
+</script>
+
+<div id="table-root">
+    {% include 'core/_league_table_partial.html' %}
 </div>
+
+{% endif %}
 {% endblock %}

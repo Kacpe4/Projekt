@@ -8,6 +8,7 @@ class League(models.Model):
     tournament_template_id = models.CharField(max_length=50)
     name = models.CharField(max_length=200)
     country = models.CharField(max_length=100)
+    logo = models.URLField(max_length=500, blank=True)
 
     class Meta:
         verbose_name = "League"
