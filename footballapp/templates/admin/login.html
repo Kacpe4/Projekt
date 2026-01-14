@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="login-container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%; border-radius: 15px;">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">Panel Admina</h2>
+            <p class="text-muted">Zaloguj się do zarządzania Football Hub</p>
+        </div>
+        
+        <form action="{{ app_path }}" method="post">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="id_username" class="form-label">Nazwa użytkownika</label>
+                {{ form.username }} 
+            </div>
+            
+            <div class="mb-3">
+                <label for="id_password" class="form-label">Hasło</label>
+                {{ form.password }}
+            </div>
+
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <button type="submit" class="btn btn-primary w-100 py-2 mt-2" style="border-radius: 8px; background-color: #0d6efd;">
+                Wejdź do Panelu
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('id_username').classList.add('form-control');
+    document.getElementById('id_password').classList.add('form-control');
+</script>
+{% endblock %}

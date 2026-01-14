@@ -5,7 +5,7 @@ from django.apps import apps
 from django.utils.text import slugify
 
 class Command(BaseCommand):
-    help = 'Pobiera piłkarzy w trybie WYMUSZONYM (bez weryfikacji nazw).'
+    help = 'Pobiera piłkarzy używając PEŁNEJ listy aliasów.'
 
     def handle(self, *args, **options):
         try:
@@ -16,18 +16,18 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("❌ Błąd: Nie znaleziono modeli."))
             return
 
-        # Pobieramy wszystkie drużyny (już bez filtra ID, bierzemy wszystko co jest)
         all_teams = Team.objects.all()
-        
-        self.stdout.write(f"Znaleziono {all_teams.count()} drużyn. Start trybu WYMUSZONEGO...")
+        self.stdout.write(f"Znaleziono {all_teams.count()} drużyn. Start...")
 
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36"
         }
         url = "https://www.thesportsdb.com/api/v1/json/3/searchplayers.php"
 
-        # Aliasy pomagają API znaleźć klub, jeśli oficjalna nazwa nie działa
+        # --- WIELKA LISTA TŁUMACZEŃ (Twoja Baza -> API) ---
+        # Dzięki temu API zawsze zrozumie o kogo pytamy
         SEARCH_ALIASES = {
+            # Nazwa w Twojej Bazie       : Nazwa dla API
             "Wolverhampton Wanderers": "Wolves",
             "Brighton and Hove Albion": "Brighton",
             "Nottingham Forest": "Nottingham",
@@ -37,16 +37,25 @@ class Command(BaseCommand):
             "Sheffield United": "Sheffield",
             "Luton Town": "Luton",
             "Manchester United": "Man United",
-            "Manchester City": "Man City"
+            "Manchester City": "Man City",
+            "AFC Bournemouth": "Bournemouth",
+            "Leeds United": "Leeds",
+            "Leicester City": "Leicester",
+            "Norwich City": "Norwich",
+            "Watford": "Watford",
+            "Brentford": "Brentford",
+            "Crystal Palace": "Crystal Palace",
+            "Aston Villa": "Aston Villa" 
+            # Arsenal, Chelsea, Liverpool, Everton, Fulham, Burnley zazwyczaj działają bez zmian
         }
 
         total_saved_global = 0
 
         for i, team in enumerate(all_teams, 1):
-            self.stdout.write(f"[{i}/{all_teams.count()}] ⏳ {team.name}...", ending='')
-
-            # Ustalanie nazwy do wyszukiwania
+            # Tu sprawdzamy, czy mamy tłumaczenie. Jeśli nie, bierzemy oryginalną nazwę.
             search_name = SEARCH_ALIASES.get(team.name, team.name)
+            
+            self.stdout.write(f"[{i}/{all_teams.count()}] ⏳ Szukam: '{search_name}' (Baza: {team.name})...", ending='')
 
             try:
                 response = requests.get(url, params={'t': search_name}, headers=headers)
@@ -56,19 +65,17 @@ class Command(BaseCommand):
                 continue
 
             if not data.get('player'):
-                self.stdout.write(self.style.WARNING(f" ⚠️ Pusto (szukano: {search_name})"))
+                self.stdout.write(self.style.WARNING(f" ⚠️ Pusto"))
                 continue
 
             saved_count = 0
-            # --- ZMIANA: Brak pętli sprawdzającej nazwy. Bierzemy wszystko. ---
             
             for item in data['player']:
                 try:
-                    # 1. Pobieramy dane
+                    # Logika pobierania (identyczna jak wcześniej)
                     api_player_id = item.get('idPlayer')
                     full_name = item.get('strPlayer', 'Unknown')
                     
-                    # Logika dla pozycji
                     raw_pos = item.get('strPosition')
                     pos = 'Midfielders'
                     if raw_pos == "Goalkeeper": pos = 'Goalkeepers'
@@ -76,44 +83,35 @@ class Command(BaseCommand):
                     elif raw_pos == "Midfielder": pos = 'Midfielders'
                     elif raw_pos == "Forward": pos = 'Forwards'
 
-                    # Dzielenie imienia
                     parts = full_name.split(' ', 1)
                     f_name = parts[0]
                     l_name = parts[1] if len(parts) > 1 else ""
 
-                    # 2. ZAPISUJEMY BEZ PYTANIA O ZGODĘ
                     player_obj, _ = Player.objects.update_or_create(
                         player_id=api_player_id,
                         defaults={
-                            'first_name': f_name, 
-                            'last_name': l_name,
+                            'first_name': f_name, 'last_name': l_name,
                             'slug': slugify(f"{f_name}-{l_name}-{api_player_id}"),
                             'position': pos
                         }
                     )
 
-                    # 3. Przypisujemy do AKTUALNEJ drużyny z pętli (team)
                     TeamSquad.objects.update_or_create(
-                        team=team, 
-                        player=player_obj,
-                        defaults={
-                            'jersey_number': item.get('strNumber') or "", 
-                            'tournament_id': '4328'
-                        }
+                        team=team, player=player_obj,
+                        defaults={'jersey_number': item.get('strNumber') or "", 'tournament_id': '4328'}
                     )
                     saved_count += 1
                     total_saved_global += 1
 
-                except Exception as e:
+                except Exception:
                     continue
 
             if saved_count > 0:
-                # Wypisujemy co dokładnie API zwróciło jako nazwę klubu, dla ciekawości
-                api_team_name = data['player'][0].get('strTeam', 'Unknown')
-                self.stdout.write(self.style.SUCCESS(f" ✅ Dodano {saved_count} (API: {api_team_name})"))
+                self.stdout.write(self.style.SUCCESS(f" ✅ Dodano {saved_count}"))
             else:
-                self.stdout.write(self.style.WARNING(" ⚠️ Dziwny błąd zapisu"))
+                self.stdout.write(self.style.WARNING(" ⚠️ Pusto (mimo poprawnej odpowiedzi)"))
 
-            time.sleep(0.8) 
+            # Zwiększyłem czas, żeby API nie blokowało innych klubów po pobraniu Arsenalu
+            time.sleep(1.2) 
 
         self.stdout.write(self.style.SUCCESS(f"🎉 KONIEC! Mamy {total_saved_global} piłkarzy w bazie."))

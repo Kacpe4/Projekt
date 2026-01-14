@@ -1,0 +1,36 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">⚽ Najnowsze Wiadomości</h1>
+
+    <div class="row">
+        {% for news in articles %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if news.image_url %}
+                <img src="{{ news.image_url }}" class="card-img-top" alt="News image" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <span>Brak zdjęcia</span>
+                </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h5 class="card-title">{{ news.title }}</h5>
+                    <p class="card-text small text-muted">{{ news.description|striptags|truncatewords:20 }}</p>
+                    <p class="text-xs text-secondary">{{ news.published_date|date:"d M Y, H:i" }} | {{ news.source_name }}</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="{{ news.url }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">Czytaj więcej &rarr;</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">Brak newsów. Uruchom skrypt fetch_news!</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

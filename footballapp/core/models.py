@@ -254,3 +254,19 @@ class StatDefinition(models.Model):
 
     def __str__(self):
         return f"{self.stat_id} - {self.stat_name}"
+    
+    # ... (twoje inne modele: League, Team itp.)
+
+class NewsArticle(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    url = models.URLField(unique=True)  # Link do pełnego artykułu (unikalny)
+    image_url = models.URLField(blank=True, null=True)
+    published_date = models.DateTimeField()
+    source_name = models.CharField(max_length=100)  # np. "Sky Sports"
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ['-published_date'] # Najnowsze na górze
